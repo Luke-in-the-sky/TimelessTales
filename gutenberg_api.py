@@ -97,12 +97,10 @@ class ProjectGutenbergAPI:
         Returns:
             str: The text content of the book if successful.
         """
-        try:
-            search_results = self.search_books(query, top_n=1)
-            if search_results:
-                book_link = search_results[0]['link']
-                book_content = self.download_book_content(book_link, text_only=text_only)
-            else:
-                raise ProjectGutenbergAPIError("No search results found")
-        except ProjectGutenbergAPIError as e:
-            print(f"Error: {e}")
+        search_results = self.search_books(query, top_n=1)
+        if search_results:
+            book_link = search_results[0]['link']
+            book_content = self.download_book_content(book_link, text_only=text_only)
+            return book_content
+        else:
+            raise ProjectGutenbergAPIError("No search results found")
