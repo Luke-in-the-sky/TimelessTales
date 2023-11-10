@@ -47,14 +47,12 @@ class LargeLanguageModelAPI:
             self.tokenizer = AutoTokenizer.from_pretrained(model_id)
             self.model = AutoModelForCausalLM.from_pretrained(model_id)
 
-    def infer(self, text, temperature=0.7):
+    def infer(self, text):
         """
         Generates an inference from the chosen large language model based on the input text.
 
         Parameters:
             text (str): The input text to be processed by the model.
-            temperature (float, optional): Controls the randomness of the output for OpenAI models.
-                                           Ignored for Hugging Face models. Defaults to 0.7.
 
         Returns:
             str: The generated text from the model.
@@ -62,7 +60,7 @@ class LargeLanguageModelAPI:
         if self.model_type == 'huggingface':
             return self._hf_local_model_inference(text)
         elif self.model_type == 'openai':
-            return self._oai_remote_model_inference(text, temperature)
+            return self._oai_remote_model_inference(text)
         else:
             raise ValueError("Invalid model type specified.")
 
@@ -80,29 +78,34 @@ class LargeLanguageModelAPI:
         out = self.model.generate(**inputs, max_new_tokens=300)
         return self.tokenizer.decode(out[0], skip_special_tokens=True)
 
-    def _oai_remote_model_inference(self, text, temperature):
+    def _oai_remote_model_inference(self, text):
         """
         Generates an inference using OpenAI's GPT model remotely.
 
         Parameters:
             text (str): The input text to be processed by the model.
-            temperature (float): Controls the randomness of the output.
 
         Returns:
             str: The generated text from the model.
         """
-        import openai
-
         if not self.api_key:
             raise ValueError("API key is required for OpenAI model inference.")
 
-        openai.api_key = self.api_key
+        from openai import OpenAI
 
-        response = openai.Completion.create(
-            engine=self._model_id,
-            prompt=text,
-            max_tokens=50,
-            temperature=temperature
+        client = OpenAI(
+            # defaults to os.environ.get("OPENAI_API_KEY")
+            api_key=self.api_key,
         )
 
-        return response.choices[0].text.strip()
+        chat_completion = client.chat.completions.create(
+            messages=[
+                {
+                    "role": "user",
+                    "content": "Say this is a test",
+                }
+            ],
+            model="gpt-3.5-turbo",
+        )
+
+        return chat_completion.choices[0].text.strip()
