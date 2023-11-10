@@ -1,15 +1,9 @@
 import pytest
 from unittest.mock import patch
-from main import LiteratureAdaptationApp
+from main import LiteratureAdaptationApp  # Replace 'your_module' with the actual module name
 
 @pytest.fixture
-def mock_large_language_model_api():
-    # Mock the LargeLanguageModelAPI class
-    with patch('main.LargeLanguageModelAPI') as mock_api:
-        yield mock_api.return_value
-
-@pytest.fixture
-def app(mock_large_language_model_api):
+def app(mocker):
     # Create an instance of LiteratureAdaptationApp for testing
     return LiteratureAdaptationApp(
         gutenberg_query="Sample Query",
@@ -33,10 +27,10 @@ def test_output_result_file(app, tmp_path):
 
 def test_run(app, mocker):
     # Mock the ProjectGutenbergAPI and LargeLanguageModelAPI calls
-    mock_project_gutenberg_api = mocker.patch('your_module.ProjectGutenbergAPI')
+    mock_project_gutenberg_api = mocker.patch('gutenberg_api.ProjectGutenbergAPI')
     mock_project_gutenberg_api.return_value.download_most_popular_book_from_query.return_value = "Sample Book Content"
 
-    mock_summarizer = mocker.patch('your_module.TextSummarizer')
+    mock_summarizer = mocker.patch('summarizer.TextSummarizer')
     mock_summarizer_instance = mock_summarizer.return_value
     mock_summarizer_instance.summarize.return_value = "Sample Summary"
 

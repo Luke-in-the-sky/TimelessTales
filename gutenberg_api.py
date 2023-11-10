@@ -3,8 +3,10 @@ import re
 import requests
 from bs4 import BeautifulSoup
 
+
 class ProjectGutenbergAPIError(Exception):
     """Custom exception class for Project Gutenberg API errors."""
+
     def __init__(self, message):
         self.message = message
         super().__init__(self.message)
@@ -18,6 +20,7 @@ class ProjectGutenbergAPI:
     Attributes:
         base_url (str): The base URL for the Project Gutenberg search functionality.
     """
+
     def __init__(self):
         self.base_url = "https://www.gutenberg.org/ebooks/search/?query="
 
@@ -35,16 +38,16 @@ class ProjectGutenbergAPI:
         """
         search_url = self.base_url + query
         response = requests.get(search_url)
-        soup = BeautifulSoup(response.content, 'html.parser')
+        soup = BeautifulSoup(response.content, "html.parser")
         books = []
-        for row in soup.find_all('li', class_='booklink'):
+        for row in soup.find_all("li", class_="booklink"):
             if top_n == 0:
                 break
-            link = row.find('a', class_='link')
-            book_link = "https://www.gutenberg.org" + link.get('href')
-            book_title = row.find('span', class_='title').get_text().strip()
-            author = row.find('span', class_='subtitle').get_text().strip()
-            books.append({'title': book_title, 'author': author, 'link': book_link})
+            link = row.find("a", class_="link")
+            book_link = "https://www.gutenberg.org" + link.get("href")
+            book_title = row.find("span", class_="title").get_text().strip()
+            author = row.find("span", class_="subtitle").get_text().strip()
+            books.append({"title": book_title, "author": author, "link": book_link})
             top_n -= 1
         return books
 
@@ -67,13 +70,15 @@ class ProjectGutenbergAPI:
         """
         try:
             if text_only:
-                book_id_match = re.search(r'gutenberg\.org/ebooks/(\d+)/?$', book_link)
+                book_id_match = re.search(r"gutenberg\.org/ebooks/(\d+)/?$", book_link)
                 if book_id_match:
                     book_id = book_id_match.group(1)
                     content_url = f"https://www.gutenberg.org/cache/epub/{book_id}/pg{book_id}.txt"
                     response = requests.get(content_url)
                 else:
-                    raise ProjectGutenbergAPIError("Failed to extract book_id from book_link")
+                    raise ProjectGutenbergAPIError(
+                        "Failed to extract book_id from book_link"
+                    )
             else:
                 response = requests.get(book_link)
 
@@ -99,7 +104,7 @@ class ProjectGutenbergAPI:
         """
         search_results = self.search_books(query, top_n=1)
         if search_results:
-            book_link = search_results[0]['link']
+            book_link = search_results[0]["link"]
             book_content = self.download_book_content(book_link, text_only=text_only)
             return book_content
         else:

@@ -41,9 +41,10 @@ class LargeLanguageModelAPI:
         Parameters:
             model_id (str): The identifier for the Hugging Face model.
         """
-        if self.model_type == 'huggingface' and self._model_id != model_id:
+        if self.model_type == "huggingface" and self._model_id != model_id:
             self._model_id = model_id
             from transformers import AutoTokenizer, AutoModelForCausalLM
+
             self.tokenizer = AutoTokenizer.from_pretrained(model_id)
             self.model = AutoModelForCausalLM.from_pretrained(model_id)
 
@@ -57,9 +58,9 @@ class LargeLanguageModelAPI:
         Returns:
             str: The generated text from the model.
         """
-        if self.model_type == 'huggingface':
+        if self.model_type == "huggingface":
             return self._hf_local_model_inference(text)
-        elif self.model_type == 'openai':
+        elif self.model_type == "openai":
             return self._oai_remote_model_inference(text)
         else:
             raise ValueError("Invalid model type specified.")
