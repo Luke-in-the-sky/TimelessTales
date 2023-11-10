@@ -95,7 +95,7 @@ class TextSummarizer:
         summarize(text: str) -> str: Returns a summary of the provided text.
     """
 
-    def __init__(self, language_model: LargeLanguageModelAPI, custom_system_prompt: str = None, max_length=2048):
+    def __init__(self, language_model: LargeLanguageModelAPI, custom_system_prompt: str = None, max_length=None):
         """
         Initializes the TextSummarizer instance with a language model, a system prompt, and a maximum length.
 
@@ -103,11 +103,13 @@ class TextSummarizer:
             language_model (object): An instance of the large language model used for summarization.
             system_prompt (str): A hardcoded system prompt to be concatenated with the text to be summarized.
             if None, a default system prompt will be used.
-            max_length (int): The maximum length of text that the model can handle. Defaults to 2048.
+            max_length (int): the size of the chunck of text we will create mini-summaries for.
+                smaller sizes mean we will end up with a more detailed summary, larger sizes mean we will end up
+                with a more high-level summary. Defaults to the largest context that the LLM model can handle.
         """
         self.llm = language_model
         self.system_prompt = system_prompt if system_prompt else prompt__summarize_narrative
-        self.set_max_length(language_model.max_context_length)
+        self.set_max_length(max_length or language_model.max_context_length)
 
     def set_max_length(self, max_length):
         """
@@ -152,3 +154,6 @@ class TextSummarizer:
                 # Combine the individual summaries into the final summary
                 final_summary = ' '.join(summaries)
                 return final_summary
+
+    # TODO: we might want to add a method to expand summaries abstractively a little bit, so that
+    # `summarize` gives the outline, but the new method expands on individual chapters a bit more
