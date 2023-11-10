@@ -15,14 +15,6 @@ class StringSplitter:
     of newline characters ('\\n'). The chunks are created such that each is smaller than or
     equal to a specified maximum chunk length. If a chunk exceeds the maximum length and cannot
     be split on a newline sequence, it is split at the maximum length.
-
-    Attributes:
-        max_chunk_length (int): The maximum allowed length of each chunk.
-
-    This class can be used to process long strings where it is important to preserve newline
-    grouping and maintain readability, such as when formatting text for display in a limited
-    space or ensuring consistent data chunks for processing.
-
     Usage:
         >>> splitter = StringSplitter(max_chunk_length=45)
         >>> input_string = "Your\\n\\n\\nvery long string\\n\\nwith newline\\ncharacters"
@@ -86,14 +78,6 @@ class TextSummarizer:
     """
     A class that encapsulates the functionality required to summarize a long piece of text using a
     large language model, either via an API or a downloaded model from Hugging Face.
-
-    Attributes:
-        language_model (object): An instance of the large language model used for summarization.
-        system_prompt (str): A hardcoded system prompt to be used for initiating the summary.
-        max_length (int): The maximum length of text that the model can handle in one go.
-
-    Methods:
-        summarize(text: str) -> str: Returns a summary of the provided text.
     """
 
     def __init__(
@@ -104,62 +88,59 @@ class TextSummarizer:
     ):
         """
         Initializes the TextSummarizer instance with a language model, a system prompt, and a maximum length.
-
-        Parameters:
-            language_model (object): An instance of the large language model used for summarization.
-            system_prompt (str): A hardcoded system prompt to be concatenated with the text to be summarized.
-            if None, a default system prompt will be used.
-            max_length (int): the size of the chunck of text we will create mini-summaries for.
-                smaller sizes mean we will end up with a more detailed summary, larger sizes mean we will end up
-                with a more high-level summary. Defaults to the largest context that the LLM model can handle.
         """
         self.llm = language_model
         self.system_prompt = (
-            system_prompt if system_prompt else prompt__summarize_narrative
+            custom_system_prompt
+            if custom_system_prompt
+            else prompt__summarize_narrative
+            # TODO: we might have a more standard system prompt and concat here
+            # the custom one just to express style preferences
         )
         self.set_max_length(max_length or language_model.max_context_length)
 
     def set_max_length(self, max_length):
         """
-        Sets the maximum length of text that the model can handle and initializes a StringSplitter instance.
-
-        Parameters:
-            max_length (int): The maximum length of text that the model can handle.
+        Sets the maximum length of text to summarize and initializes a StringSplitter instance.
+        If max_length < length of the text to be summarize, we will chunk things down into sizes of max_length
         """
         self.max_length = max_length
         self.string_splitter = StringSplitter(max_length)
 
-    def summarize(self, text: str) -> str:
+    def summarize(
+        self,
+        text: str,
+    ) -> str:
         """
         Summarizes the provided text using the language model.
 
         If the concatenated system prompt and text exceeds the maximum length, the text is split into chunks
         using the `StringSplitter.split_text` method. Each chunk is then summarized individually, and the results
         are concatenated to form the final summary.
-
-        Parameters:
-            text (str): The long text to be summarized.
-
-        Returns:
-            str: A summary of the input text.
         """
         # Concatenate the prompt with the text
-        full_text = self.system_prompt + "\n" + text
+        full_text = self.llm.compose_prompt(
+            message=text, system_message=self.system_prompt
+        )
 
-        # Check if the length of the text is within the maximum length limit
-        if len(full_text) <= self.max_length:
-            # If the text is within the limit, directly infer the summary
-            return self.llm.infer(full_text)
+        # Check if the length of the text is within the maximum length of chuncks we want to summarize
+        if len(text) <= self.max_length:
+            return self.llm.infer(
+                full_text
+            )  # infer on `full_text`, but have the if on `text`
         else:
             # If the text exceeds the limit, split it into manageable chunks
-            chunks = self.string_splitter.split_string(full_text)
+            chunks = self.string_splitter.split_string(text)
+            full_chunks = [
+                self.llm.compose_prompt(
+                    message=chunk, system_message=self.system_prompt
+                )
+                for chunk in chunks
+            ]
 
-            # Summarize each chunk individually
-            summaries = [self.llm.infer(chunk) for chunk in chunks]
-
-            # Combine the individual summaries into the final summary
-            final_summary = " ".join(summaries)
-            return final_summary
+            # Summarize each chunk individually, then combine them into the final summary
+            summaries = [self.llm.infer(full) for full in full_chunks]
+            return " ".join(summaries)
 
     # TODO: we might want to add a method to expand summaries abstractively a little bit, so that
     # `summarize` gives the outline, but the new method expands on individual chapters a bit more

@@ -1,3 +1,20 @@
+from dataclasses import dataclass
+
+
+prompt_templates = {
+    "pszemraj/led-base-book-summary": "{message}",
+    "teknium/Mistral-Trismegistus-7B": "{system_message}\nUSER: {message}\nASSISTANT:",
+}
+
+
+class LargeLanguageModelAPIError(Exception):
+    """Custom exception class for LargeLanguageModelAPI errors."""
+
+    def __init__(self, message):
+        self.message = message
+        super().__init__(self.message)
+
+
 class LargeLanguageModelAPI:
     """
     A unified API class to interface with different large language models.
@@ -7,39 +24,21 @@ class LargeLanguageModelAPI:
     For Hugging Face models, the model and tokenizer are instantiated only once
     when a new model_id is set. The actual inference call will utilize the specified
     model to generate the output.
-
-    Attributes:
-        model_type (str): Type of model to use ('huggingface' or 'openai').
-        model_id (str): The model identifier for Hugging Face or engine name for OpenAI.
-        api_key (str, optional): The API key for OpenAI's model. Not required for local Hugging Face models.
-        tokenizer (object, optional): Tokenizer instance for the Hugging Face model.
-        model (object, optional): Model instance for the Hugging Face model.
     """
 
     def __init__(self, model_type, model_id, api_key=None, max_context_length=4000):
         """
         Initializes the API interface with the given model type and identifier.
-
-        Parameters:
-            model_type (str): The type of model, either 'huggingface' for a local model
-                              or 'openai' for a remote model.
-            model_id (str): The identifier for the Hugging Face model or the engine name for OpenAI.
-            api_key (str, optional): The API key for OpenAI. Required if using an OpenAI model.
         """
         self.model_type = model_type
         self.api_key = api_key
         self._model_id = None
-        self.tokenizer = None
-        self.model = None
         self.max_context_length = max_context_length
         self.set_model_id(model_id)
 
     def set_model_id(self, model_id):
         """
         Sets a new model identifier for Hugging Face models and re-instantiates the tokenizer and model.
-
-        Parameters:
-            model_id (str): The identifier for the Hugging Face model.
         """
         if self.model_type == "huggingface" and self._model_id != model_id:
             self._model_id = model_id
@@ -48,20 +47,28 @@ class LargeLanguageModelAPI:
             self.tokenizer = AutoTokenizer.from_pretrained(model_id)
             self.model = AutoModelForCausalLM.from_pretrained(model_id)
 
-    def infer(self, text):
+    def compose_prompt(
+        self, message: str, system_message: str = None, full_text: str = None
+    ):
+        if full_text is not None:
+            return full_text
+        try:
+            full_text = prompt_templates[self._model_id].format(
+                message=message, system_message=system_message
+            )
+        except KeyError:
+            raise ValueError("Don't know the prompt format for this model")
+
+    def infer(self, text: str = None):
         """
         Generates an inference from the chosen large language model based on the input text.
-
-        Parameters:
-            text (str): The input text to be processed by the model.
-
-        Returns:
-            str: The generated text from the model.
+        routing between huggingface and openai
         """
+        # TODO: we might want to catch situations where the text is too long for the LLM
         if self.model_type == "huggingface":
-            return self._hf_local_model_inference(text)
+            return self._hf_local_model_inference(full_text)
         elif self.model_type == "openai":
-            return self._oai_remote_model_inference(text)
+            return self._oai_remote_model_inference(full_text)
         else:
             raise ValueError("Invalid model type specified.")
 
@@ -94,16 +101,12 @@ class LargeLanguageModelAPI:
 
         from openai import OpenAI
 
-        client = OpenAI(
-            # defaults to os.environ.get("OPENAI_API_KEY")
-            api_key=self.api_key,
-        )
-
+        client = OpenAI(api_key=self.api_key)
         chat_completion = client.chat.completions.create(
             messages=[
                 {
                     "role": "user",
-                    "content": "Say this is a test",
+                    "content": text,
                 }
             ],
             model="gpt-3.5-turbo",
