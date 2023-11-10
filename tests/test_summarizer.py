@@ -3,6 +3,7 @@ from unittest.mock import Mock
 from llm_api import LargeLanguageModelAPI
 from summarizer import StringSplitter, TextSummarizer
 
+
 @pytest.fixture
 def mock_llm_api():
     mock_api = Mock(spec=LargeLanguageModelAPI)
@@ -15,6 +16,7 @@ def test_string_splitter_init():
     with pytest.raises(ValueError):
         # Test if max_chunk_length is a positive integer
         StringSplitter(max_chunk_length=-1)
+
 
 def test_string_splitter_split_string():
     splitter = StringSplitter(max_chunk_length=10)
@@ -29,14 +31,17 @@ def test_string_splitter_split_string():
     expected_chunks = ["Your\n\n\n", "very long string\n\nwith newline\ncharacters"]
     assert chunks == expected_chunks
 
+
 def test_text_summarizer_init(mock_llm_api):
     summarizer = TextSummarizer(mock_llm_api)
     assert summarizer.max_length == mock_llm_api.max_context_length
+
 
 def test_text_summarizer_set_max_length(mock_llm_api):
     summarizer = TextSummarizer(mock_llm_api)
     summarizer.set_max_length(100)
     assert summarizer.max_length == 100
+
 
 def test_text_summarizer_summarize(mock_llm_api):
     summarizer = TextSummarizer(mock_llm_api)
@@ -45,18 +50,21 @@ def test_text_summarizer_summarize(mock_llm_api):
     expected_summary = "Mocked summary"
     assert summary == expected_summary
 
+
 def test_text_summarizer_multi_chunk(mock_llm_api):
     summarizer = TextSummarizer(mock_llm_api, max_length=20)
     input_text = "This is a long test input text with multiple chunks."
     summary = summarizer.summarize(input_text)
-    expected_summary = ' '.join([
-        "Mocked summary",
-        "Mocked summary",
-        "Mocked summary",
-    ])
+    expected_summary = " ".join(
+        [
+            "Mocked summary",
+            "Mocked summary",
+            "Mocked summary",
+        ]
+    )
     assert summary == expected_summary
 
 
 # Run the tests
-if __name__ == '__main__':
+if __name__ == "__main__":
     pytest.main()

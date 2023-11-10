@@ -77,7 +77,10 @@ def parse_args_from_cli():
         "--model_id", type=str, help="name of the model", required=False
     )
     parser.add_argument(
-        "--output_file_path", type=str, help="filepath for saving the output of the summarization", required=False
+        "--output_file_path",
+        type=str,
+        help="filepath for saving the output of the summarization",
+        required=False,
     )
 
     print(parser.parse_args())

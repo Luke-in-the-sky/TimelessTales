@@ -42,5 +42,6 @@ def test_run(app, mocker):
 
     app.run()
 
+
 if __name__ == "__main__":
     pytest.main()
