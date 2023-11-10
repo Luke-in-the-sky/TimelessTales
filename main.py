@@ -24,7 +24,7 @@ class LiteratureAdaptationApp:
         book_content = api.download_most_popular_book_from_query(gutenberg_query)
 
         # TODO: add functionality to specify custom preference for style
-        summarizer = TextSummarizer(language_model=self.llm,  custom_system_prompt: str = None)
+        summarizer = TextSummarizer(language_model=self.llm,  custom_system_prompt = None)
         summary = summarizer.summarize(book_content)
 
         # TODO
