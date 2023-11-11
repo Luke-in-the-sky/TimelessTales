@@ -144,3 +144,58 @@ class TextSummarizer:
 
     # TODO: we might want to add a method to expand summaries abstractively a little bit, so that
     # `summarize` gives the outline, but the new method expands on individual chapters a bit more
+
+
+# testing
+
+t =  TextSummarizer(
+        language_model=LargeLanguageModelAPI(
+            model_type="hf_seq2seq",
+            model_id="pszemraj/led-base-book-summary",
+            ),
+        custom_system_prompt="summarize this:",
+        max_length=4000,
+    )
+t.summarize('''
+            Basic Usage
+I recommend using encoder_no_repeat_ngram_size=3 when calling the pipeline object, as it enhances the summary quality by encouraging the use of new vocabulary and crafting an abstractive summary.
+
+Create the pipeline object:
+
+import torch
+from transformers import pipeline
+
+hf_name = "pszemraj/led-base-book-summary"
+
+summarizer = pipeline(
+    "summarization",
+    hf_name,
+    device=0 if torch.cuda.is_available() else -1,
+)
+
+Feed the text into the pipeline object:
+
+wall_of_text = "your words here"
+
+result = summarizer(
+    wall_of_text,
+    min_length=8,
+    max_length=256,
+    no_repeat_ngram_size=3,
+    encoder_no_repeat_ngram_size=3,
+    repetition_penalty=3.5,
+    num_beams=4,
+    do_sample=False,
+    early_stopping=True,
+)
+print(result[0]["generated_text"])
+
+Simplified Usage with TextSum
+To streamline the process of using this and other models, I've developed a Python package utility named textsum. This package offers simple interfaces for applying summarization models to text documents of arbitrary length.
+
+Install TextSum:
+
+pip install textsum
+
+Then use it in Python with this model:
+''')

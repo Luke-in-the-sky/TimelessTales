@@ -71,10 +71,10 @@ def parse_args_from_cli():
     )
     parser.add_argument("--api_key", type=str, help="OpenAI API key", required=False)
     parser.add_argument(
-        "--model_type", type=str, help="hugging_face or open_ai", required=False
+        "--model_type", type=str, help="hugging_face or open_ai", required=True
     )
     parser.add_argument(
-        "--model_id", type=str, help="name of the model", required=False
+        "--model_id", type=str, help="name of the model", required=True
     )
     parser.add_argument(
         "--output_file_path",
