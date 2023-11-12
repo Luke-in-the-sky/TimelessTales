@@ -17,6 +17,7 @@ config = {
         "max_tokens_per_chunk": 4096,
         "max_chunk_summary_length": 128,
         "chapter_separator": "\n" * 5,
+        "summaries_separator": "\n\n",
     },
     # "simplifier": {
     #     "source": Platforms.OPENAI,
@@ -58,11 +59,13 @@ class StorySummarizer:
         max_tokens_per_chunk,
         chapter_separator=None,
         max_chunk_summary_length=128,
+        summaries_separator="\n\n",
     ):
         self.model_interface = SummarizerModelInterface(model_name)
         self.max_tokens_per_chunk = max_tokens_per_chunk
         self.max_chunk_summary_length = max_chunk_summary_length
         self.chapter_separator = chapter_separator
+        self.summaries_separator = summaries_separator
 
     def chunk_tokens(self, tokens):
         """
@@ -93,13 +96,17 @@ class StorySummarizer:
                 chapter_text, max_length=self.max_chunk_summary_length
             )
 
+    def join_chapter_summaries(self, summaries):
+        sep = self.summaries_separator
+        return sep.join(summaries)
+
     def summarize(self, text):
         if self.chapter_separator:
             chapters = text.split(self.chapter_separator)
             chapter_summaries = [
                 self.summarize_chapter(chapter) for chapter in chapters
             ]
-            return " ".join(chapter_summaries)
+            return self.join_chapter_summaries(chapter_summaries)
         else:
             print("-- no chapters")
             return self.summarize_chapter(text)
