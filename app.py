@@ -35,7 +35,10 @@ class LiteratureAdaptationApp:
         book_content = api.download_most_popular_book_from_query(self.gutenberg_query)
 
         # TODO: add functionality to specify custom preference for style
-        summarizer = TextSummarizer(language_model=self.llm, custom_system_prompt=None)
+        # TODO: max_length is right now in chars, but it should be in tokens
+        summarizer = TextSummarizer(
+            language_model=self.llm, custom_system_prompt=None, max_length=10000
+        )
         summary = summarizer.summarize(book_content)
 
         # TODO
@@ -73,9 +76,7 @@ def parse_args_from_cli():
     parser.add_argument(
         "--model_type", type=str, help="hugging_face or open_ai", required=True
     )
-    parser.add_argument(
-        "--model_id", type=str, help="name of the model", required=True
-    )
+    parser.add_argument("--model_id", type=str, help="name of the model", required=True)
     parser.add_argument(
         "--output_file_path",
         type=str,

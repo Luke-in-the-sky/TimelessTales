@@ -2,10 +2,12 @@ from dataclasses import dataclass
 import torch
 from transformers import pipeline, AutoTokenizer, AutoModelForCausalLM
 
+
 class SupportedLLMTypes:
-    HF_SEQ2SEQ = 'hf_seq2seq'
-    HF_CAUSAL = 'hf_causal'
-    OA_API = 'oa_api'
+    HF_SEQ2SEQ = "hf_seq2seq"
+    HF_CAUSAL = "hf_causal"
+    OA_API = "oa_api"
+
 
 prompt_templates = {
     "pszemraj/led-base-book-summary": "{message}",
@@ -32,35 +34,41 @@ class LargeLanguageModelAPI:
     model to generate the output.
     """
 
-    def __init__(self, model_type: SupportedLLMTypes, model_id, api_key=None, max_context_length=4000):
+    def __init__(
+        self,
+        model_type: SupportedLLMTypes,
+        model_id,
+        api_key=None,
+        max_context_length=4000,
+    ):
         """
         Initializes the API interface with the given model type and identifier.
         """
 
         self.model_type = model_type
-        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.api_key = api_key
         self._model_id = None
         self.max_context_length = max_context_length
         self.set_model_id(model_id)
-
 
     def set_model_id(self, model_id):
         """
         Sets a new model identifier for Hugging Face models and re-instantiates the tokenizer and model.
         """
         if self.model_type == SupportedLLMTypes.HF_SEQ2SEQ:
-
             self.model = pipeline("summarization", model_id, device=self.device)
         elif self.model_type == SupportedLLMTypes.HF_CAUSAL:
             self.tokenizer = AutoTokenizer.from_pretrained(model_id)
             self.model = AutoModelForCausalLM.from_pretrained(model_id)
         elif self.model_type == SupportedLLMTypes.OA_API:
-            pass # nothing special here
+            pass  # nothing special here
 
         self._model_id = model_id
 
-    def compose_prompt(self, message: str, system_message: str = None, full_text: str = None):
+    def compose_prompt(
+        self, message: str, system_message: str = None, full_text: str = None
+    ):
         if full_text is not None:
             return full_text
         try:
@@ -87,7 +95,9 @@ class LargeLanguageModelAPI:
 
             return map_model_types_to_inference_logics[self.model_type](text)
         except KeyError as e:
-            raise LargeLanguageModelAPIError(f"Unknown inference for type {self.model_type}. Types supported: {map_model_types_to_inference_logics.keys()}")
+            raise LargeLanguageModelAPIError(
+                f"Unknown inference for type {self.model_type}. Types supported: {map_model_types_to_inference_logics.keys()}"
+            )
 
     def _hf_seq_model_inference(self, text) -> str:
         """
@@ -97,7 +107,7 @@ class LargeLanguageModelAPI:
         result = self.model(
             text,
             min_length=8,
-            max_length=256,
+            max_length=256,  # maximum number of tokens to be generated in the output summary.
             no_repeat_ngram_size=3,
             encoder_no_repeat_ngram_size=3,
             repetition_penalty=3.5,

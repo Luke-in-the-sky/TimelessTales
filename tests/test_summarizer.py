@@ -31,6 +31,12 @@ def test_string_splitter_split_string():
     expected_chunks = ["Your\n\n\n", "very long string\n\nwith newline\ncharacters"]
     assert chunks == expected_chunks
 
+    splitter = StringSplitter(max_chunk_length=45)
+    input_string = "Your\nvery long string\n\nwith newline\n\n\ncharacters"
+    chunks = splitter.split_string(input_string)
+    expected_chunks = ["Your\nvery long string\n\nwith newline\n\n\n", "characters"]
+    assert chunks == expected_chunks
+
 
 def test_text_summarizer_init(mock_llm_api):
     summarizer = TextSummarizer(mock_llm_api)
